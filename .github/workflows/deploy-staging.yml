@@ -15,7 +15,7 @@ jobs:
   deploy-staging:
     name: Validate & Stage Simulated Deployment
     runs-on: ubuntu-latest
-    environment: staging
+    environment: ${{ 'staging' }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate Compose & nginx configuration
@@ -33,7 +33,7 @@ jobs:
     name: Production-Like Release Gate (Manual Approval Required)
     runs-on: ubuntu-latest
     needs: deploy-staging
-    environment: production-like
+    environment: ${{ 'production-like' }}
     steps:
       - uses: actions/checkout@v4
       - name: Pre-deploy backup, migrate & rollback template
