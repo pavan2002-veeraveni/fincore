@@ -39,7 +39,9 @@ RUN pnpm prune --prod
 # ── Stage 3: Runner ──
 FROM node:22-alpine AS runner
 
-RUN apk update && apk upgrade --no-cache && apk add --no-cache curl tini
+RUN apk update && apk upgrade --no-cache && apk add --no-cache curl tini && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Create non-root user
 RUN addgroup -S fincore && adduser -S fincore -G fincore

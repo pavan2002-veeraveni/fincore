@@ -1,33 +1,41 @@
 # ──────────────────────────────────────────────────────────
-# FinCore Risk Service (FastAPI) — Docker build
+# FinCore Risk Service (FastAPI) — Multi-stage Docker build
 # ──────────────────────────────────────────────────────────
 
-FROM python:3.13-slim AS base
+FROM python:3.13-slim AS builder
 
-# Prevent Python from writing pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+
+WORKDIR /build
+
+COPY services/risk/requirements.runtime.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.runtime.txt
+
+FROM python:3.13-slim AS runner
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/usr/local/bin:$PATH"
 
 RUN apt-get update && \
     apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /usr/local/lib/python3.13/site-packages/pip* \
+           /usr/local/lib/python3.13/site-packages/setuptools* \
+           /usr/local/lib/python3.13/site-packages/wheel* \
+           /usr/local/bin/pip*
 
-# Create non-root user
 RUN groupadd --system fincore && useradd --system --gid fincore fincore
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY services/risk/requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
+COPY --from=builder /install /usr/local
 COPY services/risk/app ./app
 COPY services/risk/pyproject.toml ./
 
-# Change ownership
 RUN chown -R fincore:fincore /app
 
 USER fincore
