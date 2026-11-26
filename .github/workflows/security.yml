@@ -22,7 +22,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Audit npm/pnpm dependencies (fail on critical/high)
@@ -64,7 +64,7 @@ jobs:
       - name: Build ${{ matrix.name }} image for scan
         run: docker build -f ${{ matrix.dockerfile }} -t fincore-${{ matrix.name }}:scan .
       - name: Trivy vulnerability scan (${{ matrix.name }})
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: fincore-${{ matrix.name }}:scan
           format: table

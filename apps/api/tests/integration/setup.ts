@@ -1,8 +1,12 @@
 import './env.js';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import type { Knex } from 'knex';
 import request from 'supertest';
 import { getDb, closeDb } from '../../src/infrastructure/database/connection.js';
+import * as m001 from '../../src/infrastructure/database/migrations/001_foundation.js';
+import * as m002 from '../../src/infrastructure/database/migrations/002_financial_core.js';
+import * as m003 from '../../src/infrastructure/database/migrations/003_payments_disputes_risk.js';
+import * as m004 from '../../src/infrastructure/database/migrations/004_system_accounts_and_hardening.js';
+import * as m005 from '../../src/infrastructure/database/migrations/005_security_and_ledger_hardening.js';
 import {
   SYSTEM_USER_ID,
   SYSTEM_CUSTOMER_ID,
@@ -11,14 +15,28 @@ import {
 import { ledgerService } from '../../src/modules/ledger/ledger.service.js';
 import { app } from '../../src/app.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const migrationsDir = path.resolve(__dirname, '../../src/infrastructure/database/migrations');
+const MIGRATIONS: Array<{ name: string; mod: Knex.Migration }> = [
+  { name: '001_foundation.ts', mod: m001 },
+  { name: '002_financial_core.ts', mod: m002 },
+  { name: '003_payments_disputes_risk.ts', mod: m003 },
+  { name: '004_system_accounts_and_hardening.ts', mod: m004 },
+  { name: '005_security_and_ledger_hardening.ts', mod: m005 },
+];
+
+const testMigrationSource: Knex.MigrationSource<string> = {
+  getMigrations: async () => MIGRATIONS.map((m) => m.name),
+  getMigrationName: (migrationName: string) => migrationName,
+  getMigration: async (migrationName: string) => {
+    const entry = MIGRATIONS.find((m) => m.name === migrationName);
+    if (!entry) throw new Error(`Unknown test migration: ${migrationName}`);
+    return entry.mod;
+  },
+};
 
 export async function initTestDb() {
   const db = getDb();
   await db.migrate.latest({
-    directory: migrationsDir,
-    extension: 'ts',
+    migrationSource: testMigrationSource,
   });
   return db;
 }
