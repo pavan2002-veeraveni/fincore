@@ -4,8 +4,8 @@
 Implement versioned `/api/v1` modular Express + TypeScript REST APIs owning all authoritative financial records, consistent JSON envelopes, Zod input validation, pagination, allowlisted sorting/filtering, correlation IDs, and safe error handling without leaking internals.
 
 ## 2. Implemented Components & Code Paths
-- Server Bootstrap & Middleware Stack: `apps/api/src/app.ts`, `apps/api/src/server.ts`, `apps/api/src/config/index.ts`
-- Validation, Errors & HTTP Helpers: `apps/api/src/middleware/validate.middleware.ts`, `error.middleware.ts`, `rate-limit.middleware.ts`, `apps/api/src/shared/errors/index.ts`, `apps/api/src/shared/utils/http.ts`
+- Server Bootstrap & Middleware Stack: `backend/api/src/app.ts`, `backend/api/src/server.ts`, `backend/api/src/config/index.ts`
+- Validation, Errors & HTTP Helpers: `backend/api/src/middleware/validate.middleware.ts`, `error.middleware.ts`, `rate-limit.middleware.ts`, `backend/api/src/shared/errors/index.ts`, `backend/api/src/shared/utils/http.ts`
 - Domain Modules: `auth/`, `customers/`, `wallets/`, `beneficiaries/`, `ledger/`, `transfers/`, `payments/`, `webhooks/`, `refunds/` (including `/reversals`), `disputes/`, `reconciliation/`, `risk/`, `statements/`, `operations/`, `admin/`, `health/`
 
 ## 3. Design Decisions
@@ -22,7 +22,7 @@ Implement versioned `/api/v1` modular Express + TypeScript REST APIs owning all 
 ## 5. Evidence References
 - OpenAPI Specification: `docs/openapi.yaml`
 - Postman Collection: `docs/fincore.postman_collection.json`
-- API Integration Suites: `apps/api/tests/integration/*.test.ts`
+- API Integration Suites: `backend/api/tests/integration/*.test.ts`
 
 ## 6. Known Limitations & Remaining Work
 - Cursor pagination is deferred to future scaling; offset pagination is currently active (`ASSUMPTIONS.md` A9).

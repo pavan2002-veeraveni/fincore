@@ -8,12 +8,12 @@ Containerize Web, Express API, Outbox Worker, FastAPI Risk Service, PostgreSQL, 
 - Dockerfiles: `infra/docker/api.Dockerfile`, `infra/docker/web.Dockerfile`, `infra/docker/risk.Dockerfile`
 - Nginx Reverse Proxy & Rate Limiting Config: `infra/nginx/nginx.conf`
 - Dev & Ops Scripts: `infra/scripts/dev-setup.sh`, `backup.sh`, `restore.sh`
-- Health Endpoints: `apps/api/src/modules/health/health.routes.ts` (`/live`, `/ready`), `services/risk/app/main.py` (`/health/live`, `/health/ready`)
+- Health Endpoints: `backend/api/src/modules/health/health.routes.ts` (`/live`, `/ready`), `backend/risk/app/main.py` (`/health/live`, `/health/ready`)
 
 ## 3. Design Decisions
 - `postgres`, `redis`, `worker`, and `risk` reside exclusively on `fincore-internal` (`internal: true`); PostgreSQL/Redis ports are never exposed in base `docker-compose.yml` (`docker-compose.dev.yml` exposes them only for local dev).
 - Node and Python images drop privileges (`USER fincore`) and include `tini` + container healthchecks.
-- `api.Dockerfile` separates `dev` (tsx/workspace tooling) and `runner` (non-root Node runtime copying `apps/api/node_modules`, built `packages/contracts`, `apps/api/dist`, and `docs/openapi.yaml`); `web.Dockerfile` injects build-time `ARG NEXT_PUBLIC_API_URL` before `next build`, and `nginx.conf` proxies strictly to `web_upstream` and `api_upstream` inside `fincore-public` (keeping `risk` private).
+- `api.Dockerfile` separates `dev` (tsx/workspace tooling) and `runner` (non-root Node runtime copying `backend/api/node_modules`, built `packages/contracts`, `backend/api/dist`, and `docs/openapi.yaml`); `web.Dockerfile` injects build-time `ARG NEXT_PUBLIC_API_URL` before `next build`, and `nginx.conf` proxies strictly to `web_upstream` and `api_upstream` inside `fincore-public` (keeping `risk` private).
 - `docker-compose.yml` passes `.env`, configurable `COOKIE_SECURE` (allowing local HTTP Docker Compose testing), resource memory limits, and `worker` healthcheck.
 
 ## 4. Test Commands & Actual Results

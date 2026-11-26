@@ -59,3 +59,7 @@
 ## A15 — In-Memory Access Token + HttpOnly Refresh Cookie
 **Decision:** Express API emits both JSON tokens (for REST/Postman/tests) and an `HttpOnly`, `SameSite=Lax` refresh cookie (`fincore_refresh`) paired with double-submit `X-CSRF-Token` validation (`fincore_csrf`) on cookie refresh. The Next.js frontend keeps the access token strictly in memory — zero `localStorage` persistence.
 **Trade-off:** Hard page refresh triggers a fast silent refresh via `/auth/refresh` using the HttpOnly cookie.
+
+## A16 — Repository Layout (`backend/` and `frontend/`)
+**Decision:** All backend services reside under `backend/` (`backend/api/` for the Express API + outbox worker + migrations, and `backend/risk/` for the independently deployable FastAPI analytics service), while the Next.js App Router UI resides under `frontend/`. Shared cross-boundary Zod schemas and money helpers stay in root `packages/` alongside `infra/` and `docs/`.
+**Rationale:** Matches explicit repository organization requirements separating backend and frontend code trees cleanly while preserving workspace resolution (`pnpm-workspace.yaml`) and service boundary separation (`ASSUMPTIONS.md` A10).

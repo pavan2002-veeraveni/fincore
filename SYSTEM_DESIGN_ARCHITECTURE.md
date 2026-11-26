@@ -572,12 +572,12 @@ Deployment evidence:
 
 | # | Assessment | Main implementation areas | Minimum proof |
 |---:|---|---|---|
-| 01 | Financial customer frontend | `apps/web` customer/operations screens | responsive screenshots, E2E |
-| 02 | Financial REST APIs | `apps/api/modules/*` | OpenAPI, Supertest |
+| 01 | Financial customer frontend | `frontend` customer/operations screens | responsive screenshots, E2E |
+| 02 | Financial REST APIs | `backend/api/src/modules/*` | OpenAPI, Supertest |
 | 03 | Double-entry ledger database | ledger schema, migrations, posting service | constraints, balanced-journal tests |
 | 04 | Financial identity and authorization | auth, sessions, RBAC, step-up, audit | auth/security tests |
 | 05 | Python financial calculations | Python Decimal calculation modules | pytest boundary tests and benchmark |
-| 06 | FastAPI risk analytics | `services/risk` | API examples, pytest and benchmark |
+| 06 | FastAPI risk analytics | `backend/risk` | API examples, pytest and benchmark |
 | 07 | Transfer consistency engine | transfer service, locks, idempotency | concurrency and duplicate tests |
 | 08 | Payment and notification integrations | provider adapters, webhook, outbox | signature/dedupe/retry tests |
 | 09 | Containerized financial stack | Dockerfiles, Compose, health checks | clean startup and health evidence |

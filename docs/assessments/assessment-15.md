@@ -4,7 +4,7 @@
 Execute an end-to-end combined financial incident simulation testing concurrent competing transfers, duplicate webhook deliveries, failed payment settlements, and post-settlement compensating reversals — proving ledger parity (`SUM(debits) == SUM(credits)`), zero overdrafts, zero duplicate credits, and preserving immutable audit/journal history.
 
 ## 2. Implemented Components & Code Paths
-- Capstone Integration Simulation: `apps/api/tests/integration/capstone-incident.test.ts`
+- Capstone Integration Simulation: `backend/api/tests/integration/capstone-incident.test.ts`
 - Supporting Runbook: `docs/INCIDENT_RUNBOOK.md`
 - Global Integrity Verification Endpoint: `GET /api/v1/ledger/invariant-check` (`ledgerService.getGlobalLedgerInvariantCheck()`)
 
@@ -23,7 +23,7 @@ Execute an end-to-end combined financial incident simulation testing concurrent 
 - `pnpm --filter @fincore/api run test:coverage` -> `tests/integration/capstone-incident.test.ts` **PASSED (`1/1` suite pass; `38/38` total API tests across `11/11` files pass, `62.29%` coverage)** against PostgreSQL 18.7.
 
 ## 5. Evidence References
-- `apps/api/tests/integration/capstone-incident.test.ts`
+- `backend/api/tests/integration/capstone-incident.test.ts`
 - `docs/INCIDENT_RUNBOOK.md`
 
 ## 6. Known Limitations & Remaining Work

@@ -13,8 +13,8 @@ WORKDIR /build
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages (matches pnpm-lock.yaml importers)
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
+COPY backend/api/package.json backend/api/
+COPY frontend/package.json frontend/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
 
@@ -23,7 +23,7 @@ RUN pnpm install --frozen-lockfile --filter @fincore/web...
 
 # Copy source
 COPY packages/ packages/
-COPY apps/web/ apps/web/
+COPY frontend/ frontend/
 
 # ── Stage 2: Production Builder ──
 FROM dev AS builder
@@ -47,9 +47,9 @@ RUN addgroup -S fincore && adduser -S fincore -G fincore
 WORKDIR /app
 
 # Copy Next.js standalone output
-COPY --from=builder --chown=fincore:fincore /build/apps/web/.next/standalone ./
-COPY --from=builder --chown=fincore:fincore /build/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=fincore:fincore /build/apps/web/public ./apps/web/public
+COPY --from=builder --chown=fincore:fincore /build/frontend/.next/standalone ./
+COPY --from=builder --chown=fincore:fincore /build/frontend/.next/static ./frontend/.next/static
+COPY --from=builder --chown=fincore:fincore /build/frontend/public ./frontend/public
 
 USER fincore
 
@@ -62,4 +62,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:3000 || exit 1
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "frontend/server.js"]

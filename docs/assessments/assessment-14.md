@@ -6,7 +6,7 @@ Ensure private data-tier networking, TLS/security headers at reverse proxy, non-
 ## 2. Implemented Components & Code Paths
 - Nginx Reverse Proxy & TLS Config Template: `infra/nginx/nginx.conf` (rate limiting zones, security headers, `/risk/` internal CIDR restriction, HSTS/TLSv1.2+ SSL server block template)
 - Backup & Restore Drill Scripts: `infra/scripts/backup.sh`, `infra/scripts/restore.sh`
-- Monitoring & Metrics: `apps/api/src/infrastructure/metrics/index.ts`, `GET /api/v1/metrics`, `/api/v1/health/live`, `/api/v1/health/ready`
+- Monitoring & Metrics: `backend/api/src/infrastructure/metrics/index.ts`, `GET /api/v1/metrics`, `/api/v1/health/live`, `/api/v1/health/ready`
 - Documentation & Runbooks: `docs/OPERATIONS_RUNBOOK.md`, `docs/SECURITY.md`
 
 ## 3. Design Decisions

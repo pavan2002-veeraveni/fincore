@@ -85,7 +85,7 @@ Every HTTP response sets the `X-Request-ID` correlation header (propagated from 
 
 ---
 
-## 5. FastAPI Risk Analytics & Financial Calculations (`services/risk`)
+## 5. FastAPI Risk Analytics & Financial Calculations (`backend/risk`)
 
 Authenticated with `X-Service-Token` (`hmac.compare_digest`):
 - `GET /health/live`, `GET /health/ready`

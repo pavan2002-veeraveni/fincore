@@ -14,8 +14,8 @@ ENV CI=true
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages (matches pnpm-lock.yaml importers)
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
+COPY backend/api/package.json backend/api/
+COPY frontend/package.json frontend/
 COPY packages/config/package.json packages/config/
 COPY packages/contracts/package.json packages/contracts/
 
@@ -24,7 +24,7 @@ RUN pnpm install --frozen-lockfile --filter @fincore/api...
 
 # Copy full source & OpenAPI spec
 COPY packages/ packages/
-COPY apps/api/ apps/api/
+COPY backend/api/ backend/api/
 COPY docs/openapi.yaml docs/openapi.yaml
 
 # ── Stage 2: Production Builder ──
@@ -50,9 +50,9 @@ WORKDIR /app
 
 # Copy built assets, workspace links, contracts, and production dependencies
 COPY --from=builder --chown=fincore:fincore /build/node_modules ./node_modules
-COPY --from=builder --chown=fincore:fincore /build/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder --chown=fincore:fincore /build/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=fincore:fincore /build/apps/api/package.json ./apps/api/
+COPY --from=builder --chown=fincore:fincore /build/backend/api/node_modules ./backend/api/node_modules
+COPY --from=builder --chown=fincore:fincore /build/backend/api/dist ./backend/api/dist
+COPY --from=builder --chown=fincore:fincore /build/backend/api/package.json ./backend/api/
 COPY --from=builder --chown=fincore:fincore /build/packages ./packages
 COPY --from=builder --chown=fincore:fincore /build/docs/openapi.yaml ./docs/openapi.yaml
 COPY --from=builder --chown=fincore:fincore /build/package.json ./
@@ -66,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:4000/api/v1/health/live || exit 1
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["node", "backend/api/dist/server.js"]

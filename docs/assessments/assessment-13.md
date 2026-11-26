@@ -10,7 +10,7 @@ Publish accurate OpenAPI 3.1 contracts, Postman test collection, standardized en
 - Architecture & Data Model Docs: `SYSTEM_DESIGN_ARCHITECTURE.md`, `CODEBASE.md`, `docs/DATA_MODEL.md`, `docs/ASSUMPTIONS.md`, `README.md`
 
 ## 3. Design Decisions
-- Checked-in `docs/openapi.yaml` (OpenAPI 3.1.0, `59` paths, served live at `GET /api/v1/openapi.yaml` HTTP `200`) mirrors every `/api/v1` route group mounted in `apps/api/src/app.ts`, including `Idempotency-Key`, `X-Step-Up-Token`, `X-CSRF-Token`, and `X-Webhook-Signature` parameters plus shared `ErrorEnvelope` schemas.
+- Checked-in `docs/openapi.yaml` (OpenAPI 3.1.0, `59` paths, served live at `GET /api/v1/openapi.yaml` HTTP `200`) mirrors every `/api/v1` route group mounted in `backend/api/src/app.ts`, including `Idempotency-Key`, `X-Step-Up-Token`, `X-CSRF-Token`, and `X-Webhook-Signature` parameters plus shared `ErrorEnvelope` schemas.
 - `docs/fincore.postman_collection.json` organizes requests across 7 domain folders with dynamic test assertions and environment placeholders (zero secrets).
 - `docs/API_CONTRACTS.md` documents pagination (`meta.page`, `meta.pageSize`, `meta.total`), all canonical error codes (`VALIDATION_ERROR`, `STEP_UP_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`, `INSUFFICIENT_FUNDS`, `RATE_LIMIT_EXCEEDED`, `RISK_SERVICE_ERROR`, `RISK_SERVICE_UNAVAILABLE`, `MISSING_RAW_BODY`), and FastAPI calculation routes.
 

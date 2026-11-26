@@ -14,12 +14,12 @@ test.describe('FinCore E2E User Journeys (Requires Running Stack)', () => {
     await expect(page).toHaveURL(/\/dashboard/);
     await expect(page.getByText('SIMULATED AVAILABLE BALANCE')).toBeVisible();
 
-    await page.screenshot({ path: '../../docs/evidence/customer-dashboard-desktop.png' });
+    await page.screenshot({ path: '../docs/evidence/customer-dashboard-desktop.png' });
 
     // Check responsive mobile viewport rendering without horizontal overflow
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByText('SIMULATED AVAILABLE BALANCE')).toBeVisible();
-    await page.screenshot({ path: '../../docs/evidence/customer-dashboard-mobile.png' });
+    await page.screenshot({ path: '../docs/evidence/customer-dashboard-mobile.png' });
     await page.setViewportSize({ width: 1280, height: 800 });
 
     // Wallets automatically render initial ledger entries
@@ -46,7 +46,7 @@ test.describe('FinCore E2E User Journeys (Requires Running Stack)', () => {
     await expect(page).toHaveURL(/\/operations/);
     await expect(page.getByText('Global Double-Entry Ledger Integrity Check')).toBeVisible();
     await expect(page.getByText(/BALANCED/i)).toBeVisible();
-    await page.screenshot({ path: '../../docs/evidence/operations-console.png' });
+    await page.screenshot({ path: '../docs/evidence/operations-console.png' });
 
     await page.getByRole('link', { name: 'Risk Analytics', exact: true }).click();
     await expect(page.getByText(/Decision-support scores only/i)).toBeVisible();

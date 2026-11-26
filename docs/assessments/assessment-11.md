@@ -21,7 +21,7 @@ Automate reproducible dependency installation, typechecking, unit/integration te
   - `pnpm --filter @fincore/contracts run build` (passed)
   - `pnpm --filter @fincore/api run typecheck && lint && build && test:coverage` (**38/38 passed, 62.29% coverage**)
   - `pnpm --filter @fincore/web run typecheck && lint && test && build` (**6/6 component tests passed**, 18 routes built) + Playwright E2E (**2/2 passed**)
-  - `cd services/risk && python -m pytest -v --cov=app` (**23/23 passed**, **99% coverage**)
+  - `cd backend/risk && python -m pytest -v --cov=app` (**23/23 passed**, **99% coverage**)
 
 ## 5. Evidence References
 - `.github/workflows/ci.yml`, `security.yml`, `deploy-staging.yml`

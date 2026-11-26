@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
-COPY services/risk/requirements.runtime.txt .
+COPY backend/risk/requirements.runtime.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --prefix=/install -r requirements.runtime.txt
 
@@ -33,8 +33,8 @@ RUN groupadd --system fincore && useradd --system --gid fincore fincore
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
-COPY services/risk/app ./app
-COPY services/risk/pyproject.toml ./
+COPY backend/risk/app ./app
+COPY backend/risk/pyproject.toml ./
 
 RUN chown -R fincore:fincore /app
 

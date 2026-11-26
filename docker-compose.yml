@@ -84,7 +84,7 @@ services:
       context: .
       dockerfile: infra/docker/api.Dockerfile
     restart: unless-stopped
-    command: ["node", "apps/api/dist/worker.js"]
+    command: ["node", "backend/api/dist/worker.js"]
     env_file:
       - .env
     environment:

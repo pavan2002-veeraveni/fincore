@@ -8,10 +8,9 @@ This document defines the intended repository organization and engineering conve
 
 ## 2. Architecture at a glance
 
-- `apps/web`: Next.js App Router frontend.
-- `apps/api`: Express + TypeScript authoritative business API.
-- `apps/worker`: BullMQ worker process for retryable asynchronous work (may initially share API packages).
-- `services/risk`: FastAPI risk analytics service.
+- `frontend`: Next.js App Router frontend.
+- `backend/api`: Express + TypeScript authoritative business API (plus outbox `worker.ts`).
+- `backend/risk`: Independently deployable FastAPI risk analytics service.
 - `packages/contracts`: shared TypeScript contracts and API schemas.
 - `packages/config`: shared lint, formatting and TypeScript configuration.
 - PostgreSQL: authoritative system of record.
@@ -25,50 +24,37 @@ The API owns authoritative financial records. The risk service does not post led
 
 ```text
 fincore/
-├── apps/
-│   ├── web/
-│   │   ├── public/
-│   │   ├── src/
-│   │   │   ├── app/
-│   │   │   │   ├── (public)/login/
-│   │   │   │   ├── (public)/register/
-│   │   │   │   ├── (customer)/dashboard/
-│   │   │   │   ├── (customer)/wallets/
-│   │   │   │   ├── (customer)/beneficiaries/
-│   │   │   │   ├── (customer)/transfers/
-│   │   │   │   ├── (customer)/statements/
-│   │   │   │   ├── (customer)/disputes/
-│   │   │   │   ├── (operations)/operations/
-│   │   │   │   ├── (operations)/reconciliation/
-│   │   │   │   ├── (operations)/risk-alerts/
-│   │   │   │   └── layout.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── ui/
-│   │   │   │   ├── navigation/
-│   │   │   │   ├── data-display/
-│   │   │   │   └── forms/
-│   │   │   ├── features/
-│   │   │   │   ├── auth/
-│   │   │   │   ├── wallets/
-│   │   │   │   ├── beneficiaries/
-│   │   │   │   ├── transfers/
-│   │   │   │   ├── statements/
-│   │   │   │   ├── disputes/
-│   │   │   │   └── operations/
-│   │   │   ├── lib/
-│   │   │   │   ├── api/
-│   │   │   │   ├── auth/
-│   │   │   │   ├── env/
-│   │   │   │   └── utils/
-│   │   │   ├── hooks/
-│   │   │   └── styles/
-│   │   ├── tests/
-│   │   ├── next.config.ts
-│   │   └── package.json
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── (public)/login/
+│   │   │   ├── (public)/register/
+│   │   │   ├── (customer)/dashboard/
+│   │   │   ├── (customer)/profile/
+│   │   │   ├── (customer)/wallets/
+│   │   │   ├── (customer)/beneficiaries/
+│   │   │   ├── (customer)/transfers/
+│   │   │   ├── (customer)/payments/
+│   │   │   ├── (customer)/statements/
+│   │   │   ├── (customer)/disputes/
+│   │   │   ├── (operations)/operations/
+│   │   │   ├── (operations)/reconciliation/
+│   │   │   ├── (operations)/risk-alerts/
+│   │   │   ├── (operations)/admin/
+│   │   │   └── layout.tsx
+│   │   ├── components/
+│   │   ├── lib/
+│   │   └── styles/
+│   ├── tests/
+│   ├── next.config.mjs
+│   └── package.json
+├── backend/
 │   ├── api/
 │   │   ├── src/
 │   │   │   ├── app.ts
 │   │   │   ├── server.ts
+│   │   │   ├── worker.ts
 │   │   │   ├── config/
 │   │   │   ├── middleware/
 │   │   │   │   ├── auth.middleware.ts
@@ -114,16 +100,8 @@ fincore/
 │   │   ├── tests/
 │   │   │   ├── unit/
 │   │   │   ├── integration/
-│   │   │   └── contract/
+│   │   │   └── security/
 │   │   └── package.json
-│   └── worker/
-│       ├── src/
-│       │   ├── index.ts
-│       │   ├── queues/
-│       │   ├── processors/
-│       │   └── jobs/
-│       └── package.json
-├── services/
 │   └── risk/
 │       ├── app/
 │       │   ├── main.py
@@ -134,7 +112,8 @@ fincore/
 │       │   ├── services/
 │       │   └── tests/
 │       ├── pyproject.toml
-│       └── Dockerfile
+│       ├── requirements.txt
+│       └── requirements.runtime.txt
 ├── packages/
 │   ├── contracts/
 │   │   ├── src/
@@ -414,6 +393,6 @@ A scaffold, mock UI, passing lint, or unverified claim is not a completed featur
 ## Actual Implemented Structure vs. Initial Blueprint Notes
 
 Per `docs/ASSUMPTIONS.md`, the implemented codebase adheres to the target architecture while recording explicit resolved choices:
-- **Persistence Layer (`apps/api`):** Uses **Knex SQL-first** query builder and migrations (`apps/api/src/infrastructure/database/migrations/001`–`005`) for direct transaction, advisory lock (`pg_advisory_xact_lock`), sorted `SELECT ... FOR UPDATE`, and PostgreSQL trigger control (`ASSUMPTIONS.md` A5).
-- **Web App (`apps/web`):** Includes Next.js App Router routes across `(public)/{login,register}`, `(customer)/{dashboard,profile,wallets,beneficiaries,transfers,payments,statements,disputes}`, and `(operations)/{operations,risk-alerts,reconciliation,admin}`, calling Express `/api/v1` directly (or via Nginx in Compose) with in-memory JWT + `HttpOnly` refresh/CSRF cookies (`ASSUMPTIONS.md` A15).
-- **Risk Service (`services/risk`):** Independent FastAPI service exposing `/health/live`, `/health/ready`, `/api/v1/assess`, `/api/v1/rules`, and `Decimal` calculation endpoints (`/calculate/{fee,interest,pro-rata,statement-summary,reconciliation}`).
+- **Persistence Layer (`backend/api`):** Uses **Knex SQL-first** query builder and migrations (`backend/api/src/infrastructure/database/migrations/001`–`005`) for direct transaction, advisory lock (`pg_advisory_xact_lock`), sorted `SELECT ... FOR UPDATE`, and PostgreSQL trigger control (`ASSUMPTIONS.md` A5).
+- **Web App (`frontend`):** Includes Next.js App Router routes across `(public)/{login,register}`, `(customer)/{dashboard,profile,wallets,beneficiaries,transfers,payments,statements,disputes}`, and `(operations)/{operations,risk-alerts,reconciliation,admin}`, calling Express `/api/v1` directly (or via Nginx in Compose) with in-memory JWT + `HttpOnly` refresh/CSRF cookies (`ASSUMPTIONS.md` A15).
+- **Risk Service (`backend/risk`):** Independent FastAPI service exposing `/health/live`, `/health/ready`, `/api/v1/assess`, `/api/v1/rules`, and `Decimal` calculation endpoints (`/calculate/{fee,interest,pro-rata,statement-summary,reconciliation}`).

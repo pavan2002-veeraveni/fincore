@@ -10,7 +10,7 @@
     "test": "pnpm -r run test",
     "test:api": "pnpm --filter @fincore/api run test",
     "test:web": "pnpm --filter @fincore/web run test",
-    "test:risk": "cd services/risk && python -m pytest",
+    "test:risk": "cd backend/risk && python -m pytest",
     "db:migrate": "pnpm --filter @fincore/api run db:migrate",
     "db:seed": "pnpm --filter @fincore/api run db:seed",
     "db:rollback": "pnpm --filter @fincore/api run db:rollback",

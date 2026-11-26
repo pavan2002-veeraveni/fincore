@@ -19,5 +19,5 @@
 ## Verification Run
 - [ ] `pnpm typecheck` passed
 - [ ] `pnpm --filter @fincore/api run test` passed against PostgreSQL
-- [ ] `pytest` passed for `services/risk`
+- [ ] `pytest` passed for `backend/risk`
 - [ ] Documentation & Evidence Matrix updated if contracts changed

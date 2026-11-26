@@ -14,4 +14,4 @@ pnpm --filter @fincore/contracts run build
 pnpm --filter @fincore/api run db:migrate
 pnpm --filter @fincore/api run db:seed
 
-echo "Setup complete. Run 'pnpm dev' and start services/risk with 'uvicorn app.main:app --port 8000'."
+echo "Setup complete. Run 'pnpm dev' and start backend/risk with 'uvicorn app.main:app --app-dir backend/risk --port 8000'."

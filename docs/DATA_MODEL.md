@@ -1,7 +1,7 @@
 # FinCore — Data Model & PostgreSQL Invariants
 
 > **Database Engine:** PostgreSQL (`16-alpine` in Docker Compose; verified locally on PostgreSQL `18.7`)
-> **Query & Migration Layer:** Knex SQL-first (`apps/api/src/infrastructure/database/migrations/001`–`005`)
+> **Query & Migration Layer:** Knex SQL-first (`backend/api/src/infrastructure/database/migrations/001`–`005`)
 > **Monetary Type:** `BIGINT` integer minor units (paise for `INR`; `100` paise = `₹1.00`) — zero binary floating point (`ASSUMPTIONS.md` A1).
 
 ---

@@ -33,7 +33,7 @@ jobs:
       - name: Audit Python dependencies (pip-audit)
         run: |
           pip install --no-cache-dir pip-audit
-          pip-audit -r services/risk/requirements.txt
+          pip-audit -r backend/risk/requirements.txt
 
   secret-scan:
     name: Secret Scanning (Gitleaks)

@@ -4,10 +4,10 @@
 
 ## Architecture
 
-- **`apps/web`** — Next.js App Router + TypeScript + Tailwind customer & operations dashboards (memory tokens + HttpOnly refresh cookie).
-- **`apps/api`** — Express + TypeScript modular monolith owning all business rules, atomic double-entry ledger postings, idempotency, row locking, HMAC webhooks, disputes, reconciliation, and audit records.
-- **`apps/api/src/worker.ts`** — BullMQ + PostgreSQL outbox worker dispatching sandbox Email/SMS notifications with exponential backoff and DLQ replay.
-- **`services/risk`** — Independently deployable FastAPI + Pydantic service computing exact Python `Decimal` financial calculations and decision-support risk rules.
+- **`frontend`** — Next.js App Router + TypeScript + Tailwind customer & operations dashboards (memory tokens + HttpOnly refresh cookie).
+- **`backend/api`** — Express + TypeScript modular monolith owning all business rules, atomic double-entry ledger postings, idempotency, row locking, HMAC webhooks, disputes, reconciliation, and audit records.
+- **`backend/api/src/worker.ts`** — BullMQ + PostgreSQL outbox worker dispatching sandbox Email/SMS notifications with exponential backoff and DLQ replay.
+- **`backend/risk`** — Independently deployable FastAPI + Pydantic service computing exact Python `Decimal` financial calculations and decision-support risk rules.
 - **`packages/contracts`** — Shared Zod schemas, role/status enums, and minor-unit money formatters.
 - **PostgreSQL 16+** — System of record with immutable `ledger_entries`/`audit_events` triggers and `DEFERRABLE` journal balance triggers.
 
@@ -28,7 +28,7 @@
    ```bash
    pnpm --filter @fincore/api run dev
    pnpm --filter @fincore/web run dev
-   uvicorn app.main:app --app-dir services/risk --port 8000 --reload
+   uvicorn app.main:app --app-dir backend/risk --port 8000 --reload
    ```
 5. Docker Compose stack (for environments with Docker Engine installed):
    ```bash
@@ -47,6 +47,6 @@
 ## Verification Commands
 
 - **API Unit, Integration, Concurrency, Security & Capstone Tests:** `pnpm --filter @fincore/api run test:coverage`
-- **Python Risk & Decimal Calculations:** `cd services/risk && python -m pytest -v --cov=app`
+- **Python Risk & Decimal Calculations:** `cd backend/risk && python -m pytest -v --cov=app`
 - **Frontend Component Tests & Build:** `pnpm --filter @fincore/web run test && pnpm --filter @fincore/web run build`
 - **Assessment Evidence Matrix:** [EVIDENCE_MATRIX.md](./docs/EVIDENCE_MATRIX.md)
