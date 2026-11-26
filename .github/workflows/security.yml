@@ -1,0 +1,74 @@
+name: FinCore Security Scans
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependency-audit:
+    name: JS & Python Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit npm/pnpm dependencies (fail on critical/high)
+        run: pnpm audit --audit-level=high
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Audit Python dependencies (pip-audit)
+        run: |
+          pip install --no-cache-dir pip-audit
+          pip-audit -r services/risk/requirements.txt
+
+  secret-scan:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container-scan:
+    name: Container Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: api
+            dockerfile: infra/docker/api.Dockerfile
+          - name: web
+            dockerfile: infra/docker/web.Dockerfile
+          - name: risk
+            dockerfile: infra/docker/risk.Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.name }} image for scan
+        run: docker build -f ${{ matrix.dockerfile }} -t fincore-${{ matrix.name }}:scan .
+      - name: Trivy vulnerability scan (${{ matrix.name }})
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: fincore-${{ matrix.name }}:scan
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true

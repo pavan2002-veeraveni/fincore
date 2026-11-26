@@ -1,0 +1,45 @@
+name: Deploy Staging & Production-Like (Simulated)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Semantic version tag or commit SHA to deploy'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Validate & Stage Simulated Deployment
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose & nginx configuration
+        run: |
+          echo "Preparing release ${{ inputs.release_tag }} for staging"
+          cp .env.example .env
+          docker compose -f docker-compose.yml config -q
+          rm -f .env
+      - name: Staging smoke test command reference
+        run: |
+          echo "Target host health smoke check:"
+          echo "curl -sf https://staging.fincore.example.com/api/v1/health/ready"
+
+  deploy-production-like:
+    name: Production-Like Release Gate (Manual Approval Required)
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production-like
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pre-deploy backup, migrate & rollback template
+        run: |
+          echo "Manual approval granted for release ${{ inputs.release_tag }}"
+          echo "1. Encrypted pre-deploy backup: ./infra/scripts/backup.sh ./backups"
+          echo "2. Forward migrations: pnpm --filter @fincore/api run db:migrate"
+          echo "3. Zero-downtime rollout & verify /api/v1/health/ready"
+          echo "Rollback: ./infra/scripts/restore.sh <backup_file>.enc && docker compose up -d --no-deps api web worker"

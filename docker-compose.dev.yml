@@ -1,0 +1,80 @@
+# ──────────────────────────────────────────────────────────
+# FinCore — Development Docker Compose Overrides
+# ──────────────────────────────────────────────────────────
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file overrides the production compose with:
+#   - Source code volume mounts for hot reload
+#   - Exposed database/cache/dev ports for local tooling
+#   - Development-friendly settings
+
+services:
+  # ── PostgreSQL — Expose port for local tools ──
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # ── Redis — Expose port for local tools ──
+  redis:
+    ports:
+      - "6379:6379"
+
+  # ── API — Hot reload with tsx watch ──
+  api:
+    build:
+      target: dev
+    ports:
+      - "4000:4000"
+    command: ["pnpm", "--filter", "@fincore/api", "run", "dev"]
+    environment:
+      NODE_ENV: development
+      COOKIE_SECURE: "false"
+    volumes:
+      - ./apps/api/src:/build/apps/api/src:ro
+      - ./packages/contracts/src:/build/packages/contracts/src:ro
+      - ./packages/config:/build/packages/config:ro
+    healthcheck:
+      start_period: 30s
+
+  # ── Worker — Hot reload with tsx watch ──
+  worker:
+    build:
+      target: dev
+    command: ["pnpm", "--filter", "@fincore/api", "exec", "tsx", "watch", "src/worker.ts"]
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./apps/api/src:/build/apps/api/src:ro
+      - ./packages/contracts/src:/build/packages/contracts/src:ro
+      - ./packages/config:/build/packages/config:ro
+
+  # ── Risk — Hot reload with uvicorn --reload ──
+  risk:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./services/risk/app:/app/app:ro
+    environment:
+      LOG_LEVEL: debug
+
+  # ── Web — Hot reload (Next.js dev server) ──
+  web:
+    build:
+      target: dev
+    ports:
+      - "3000:3000"
+    command: ["pnpm", "--filter", "@fincore/web", "run", "dev"]
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+    volumes:
+      - ./apps/web:/build/apps/web
+      - /build/apps/web/node_modules
+      - /build/apps/web/.next
+    healthcheck:
+      start_period: 45s
+
+  # ── Nginx — Reload config without restart ──
+  nginx:
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
