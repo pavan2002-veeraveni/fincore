@@ -1,0 +1,1108 @@
+openapi: 3.1.0
+info:
+  title: FinCore Educational Digital Wallet, Ledger & Payment Platform API
+  version: 1.0.0
+  description: >
+    Simulated educational digital wallet, double-entry accounting ledger,
+    transfer consistency engine, sandbox payment intents & webhooks, disputes,
+    reconciliation, and FastAPI-assisted risk analytics API.
+    Synthetic data only — no real funds, banking credentials, or regulatory claims.
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local Express API server
+  - url: http://localhost/api/v1
+    description: Docker Compose Nginx reverse proxy
+tags:
+  - name: Health & Contracts
+  - name: Auth & Sessions
+  - name: Customers
+  - name: Wallets & Ledger
+  - name: Beneficiaries
+  - name: Transfers
+  - name: Payments & Webhooks
+  - name: Refunds & Reversals
+  - name: Disputes
+  - name: Statements
+  - name: Reconciliation
+  - name: Risk Analytics
+  - name: Operations & Admin
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description: Client-generated idempotency key bound to actor, method/path, and request hash.
+    StepUpToken:
+      name: X-Step-Up-Token
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Short-lived (5m) action-scoped token from /auth/step-up or /auth/mfa/verify.
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Double-submit token matching fincore_csrf cookie on cookie-based /auth/refresh.
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    UuidIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Role:
+      type: string
+      enum: [CUSTOMER, SUPPORT_AGENT, OPERATIONS_ANALYST, FINANCE_ADMIN, PLATFORM_ADMIN]
+    SuccessMeta:
+      type: object
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+    ErrorBody:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          examples: [VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, STEP_UP_REQUIRED, IDEMPOTENCY_KEY_REUSED, INSUFFICIENT_FUNDS, NOT_FOUND, CONFLICT, RATE_LIMIT_EXCEEDED, RISK_SERVICE_UNAVAILABLE, RISK_SERVICE_ERROR]
+        message:
+          type: string
+        details: {}
+        requestId:
+          type: string
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorBody'
+    SuccessEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: {}
+        meta:
+          $ref: '#/components/schemas/SuccessMeta'
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+        countryCode:
+          type: string
+          default: IN
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    StepUpRequest:
+      type: object
+      required: [password, action]
+      properties:
+        password:
+          type: string
+        action:
+          type: string
+          enum: [TRANSFER_CREATE, TRANSFER_CONFIRM, BENEFICIARY_MANAGE, REFUND_ISSUE, REVERSAL, ADMIN_ROLE_CHANGE, ADMIN_STATUS_CHANGE, WALLET_STATUS_CHANGE]
+    WalletCreateRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+          enum: [INR]
+          default: INR
+        dailyTransferLimitMinor:
+          type: integer
+          minimum: 100
+        perTransactionLimitMinor:
+          type: integer
+          minimum: 100
+    WalletStatusRequest:
+      type: object
+      required: [status, reason]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, FROZEN, CLOSED]
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    TransferCreateRequest:
+      type: object
+      required: [sourceWalletId, amountMinor]
+      properties:
+        sourceWalletId:
+          type: string
+          format: uuid
+        beneficiaryId:
+          type: string
+          format: uuid
+        destinationWalletId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          minimum: 100
+        currency:
+          type: string
+          enum: [INR]
+          default: INR
+        description:
+          type: string
+          maxLength: 500
+        requireConfirmation:
+          type: boolean
+          default: false
+    PaymentIntentCreateRequest:
+      type: object
+      required: [walletId, amountMinor]
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          minimum: 100
+        currency:
+          type: string
+          enum: [INR]
+          default: INR
+    RefundCreateRequest:
+      type: object
+      required: [amountMinor, reason]
+      properties:
+        transferId:
+          type: string
+          format: uuid
+        paymentIntentId:
+          type: string
+          format: uuid
+        amountMinor:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 3
+    ReversalCreateRequest:
+      type: object
+      required: [transferId, reason]
+      properties:
+        transferId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          minLength: 3
+    DisputeCreateRequest:
+      type: object
+      required: [transferId, category, description]
+      properties:
+        transferId:
+          type: string
+          format: uuid
+        category:
+          type: string
+        description:
+          type: string
+        evidenceSummary:
+          type: string
+    StatementCreateRequest:
+      type: object
+      required: [walletId, periodStart, periodEnd]
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+  responses:
+    BadRequest:
+      description: Validation or malformed request error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Forbidden:
+      description: Insufficient role/ownership or missing/mismatched step-up token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Conflict:
+      description: Duplicate key or idempotency payload conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    UnprocessableEntity:
+      description: Business invariant failure (e.g. insufficient funds or invalid state transition)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+paths:
+  /health/live:
+    get:
+      tags: [Health & Contracts]
+      security: []
+      summary: Process liveness check
+      responses:
+        '200':
+          description: Service alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+  /health/ready:
+    get:
+      tags: [Health & Contracts]
+      security: []
+      summary: Dependency readiness check (PostgreSQL required; Risk service and Redis advisory status)
+      responses:
+        '200':
+          description: Database ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '503':
+          description: PostgreSQL unreachable
+  /openapi.yaml:
+    get:
+      tags: [Health & Contracts]
+      security: []
+      summary: Download raw OpenAPI 3.1 YAML specification
+      responses:
+        '200':
+          description: OpenAPI YAML document
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /metrics:
+    get:
+      tags: [Health & Contracts]
+      summary: Protected operational metrics counters (Staff only)
+      responses:
+        '200':
+          description: JSON telemetry snapshot
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /auth/register:
+    post:
+      tags: [Auth & Sessions]
+      security: []
+      summary: Register synthetic customer user, profile, and initial INR wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered customer user and initial session tokens
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /auth/login:
+    post:
+      tags: [Auth & Sessions]
+      security: []
+      summary: Authenticate user; returns in-memory access token and sets HttpOnly refresh + CSRF cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login succeeded
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/refresh:
+    post:
+      tags: [Auth & Sessions]
+      security: []
+      summary: Rotate refresh token via HttpOnly cookie + X-CSRF-Token (or JSON refreshToken)
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Rotated token pair returned
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      tags: [Auth & Sessions]
+      summary: Revoke caller's active session and clear cookies
+      responses:
+        '200':
+          description: Session terminated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/step-up:
+    post:
+      tags: [Auth & Sessions]
+      summary: Reauthenticate with password for action-scoped step-up token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepUpRequest'
+      responses:
+        '200':
+          description: Step-up token issued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/mfa/challenge:
+    post:
+      tags: [Auth & Sessions]
+      summary: Issue SIMULATED MFA challenge (educational synthetic code in non-production)
+      responses:
+        '201':
+          description: MFA challenge created
+  /auth/mfa/verify:
+    post:
+      tags: [Auth & Sessions]
+      summary: Verify SIMULATED MFA code with row lock and max-5 attempt cap
+      responses:
+        '200':
+          description: Step-up token issued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags: [Auth & Sessions]
+      summary: Get current authenticated user profile, roles, and wallet summary
+      responses:
+        '200':
+          description: Current user info
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/sessions:
+    get:
+      tags: [Auth & Sessions]
+      summary: List caller's active/recent authentication sessions
+      responses:
+        '200':
+          description: Sessions list
+  /auth/sessions/{id}:
+    delete:
+      tags: [Auth & Sessions]
+      summary: Revoke owned session by ID
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Session revoked
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /customers/me:
+    get:
+      tags: [Customers]
+      summary: Get caller's synthetic customer profile
+      responses:
+        '200':
+          description: Customer profile
+    patch:
+      tags: [Customers]
+      summary: Update caller's synthetic customer profile fields
+      responses:
+        '200':
+          description: Updated profile
+  /customers:
+    get:
+      tags: [Customers]
+      summary: List customer profiles (SUPPORT_AGENT, OPERATIONS_ANALYST, FINANCE_ADMIN, PLATFORM_ADMIN)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated customer list
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /customers/{id}:
+    get:
+      tags: [Customers]
+      summary: Get customer profile by ID (owner or support/ops/finance/platform staff)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Customer profile details
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /wallets:
+    post:
+      tags: [Wallets & Ledger]
+      summary: Create a simulated INR wallet (max 5 active wallets per customer)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletCreateRequest'
+      responses:
+        '201':
+          description: Wallet created
+    get:
+      tags: [Wallets & Ledger]
+      summary: List caller wallets (or all filtered wallets for staff roles)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, FROZEN, CLOSED]
+      responses:
+        '200':
+          description: Wallet list
+  /wallets/{id}:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Get wallet details (owner or authorized staff)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Wallet record
+  /wallets/{id}/balance:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Get wallet ledger, available, and pending hold balances
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Wallet balance projection
+  /wallets/{id}/transactions:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Get immutable ledger entries for wallet
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated wallet ledger entries
+  /wallets/{id}/status:
+    patch:
+      tags: [Wallets & Ledger]
+      summary: Change customer wallet status (FINANCE_ADMIN / PLATFORM_ADMIN + WALLET_STATUS_CHANGE step-up)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletStatusRequest'
+      responses:
+        '200':
+          description: Wallet status updated and audited
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /beneficiaries:
+    post:
+      tags: [Beneficiaries]
+      summary: Save active customer wallet beneficiary (excludes SYSTEM accounts)
+      parameters:
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '201':
+          description: Beneficiary saved
+    get:
+      tags: [Beneficiaries]
+      summary: List caller's saved beneficiaries
+      parameters:
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Beneficiary list
+  /beneficiaries/{id}:
+    patch:
+      tags: [Beneficiaries]
+      summary: Update beneficiary nickname
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '200':
+          description: Beneficiary updated
+    delete:
+      tags: [Beneficiaries]
+      summary: Soft-deactivate beneficiary
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '200':
+          description: Beneficiary deactivated
+  /transfers:
+    post:
+      tags: [Transfers]
+      summary: Create atomic or confirmation-held wallet transfer with deterministic row locking
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/StepUpToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferCreateRequest'
+      responses:
+        '201':
+          description: Transfer created/completed
+        '200':
+          description: Idempotent replay returning original result
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags: [Transfers]
+      summary: List transfers (owner or staff) with allowlisted sort & pagination
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [created_at, amount_minor, status]
+        - name: sortDir
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Paginated transfers
+  /transfers/{id}:
+    get:
+      tags: [Transfers]
+      summary: Get single transfer details
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Transfer resource
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /transfers/{id}/confirm:
+    post:
+      tags: [Transfers]
+      summary: Capture hold and settle pending transfer
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '200':
+          description: Transfer settled
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /transfers/{id}/cancel:
+    post:
+      tags: [Transfers]
+      summary: Cancel PENDING_CONFIRMATION transfer and release wallet hold
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Transfer cancelled and hold released
+  /payment-intents:
+    post:
+      tags: [Payments & Webhooks]
+      summary: Create sandbox top-up payment intent (idempotent)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentIntentCreateRequest'
+      responses:
+        '201':
+          description: Payment intent initialized with sandbox provider reference
+    get:
+      tags: [Payments & Webhooks]
+      summary: List payment intents (customer own or ops/finance/platform staff)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Paginated payment intents
+  /payment-intents/{id}:
+    get:
+      tags: [Payments & Webhooks]
+      summary: Get payment intent by ID
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Payment intent record
+  /payment-intents/{id}/simulate-webhook:
+    post:
+      tags: [Payments & Webhooks]
+      summary: Emit signed sandbox provider webhook (development/test simulation)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Signed webhook processed
+  /webhooks/{provider}:
+    post:
+      tags: [Payments & Webhooks]
+      security: []
+      summary: Receive HMAC-SHA256 signed sandbox provider webhook (strictly raw-byte verified & deduplicated)
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [sandbox]
+        - name: X-Webhook-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Processed, failed_recorded, or duplicate acknowledgment
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /refunds:
+    post:
+      tags: [Refunds & Reversals]
+      summary: Issue full or partial compensating refund (transfer return by recipient or staff; payment intent refund by finance/platform staff)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/StepUpToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundCreateRequest'
+      responses:
+        '201':
+          description: Refund journal posted
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags: [Refunds & Reversals]
+      summary: List refunds (owner or staff)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated refunds
+  /refunds/{id}:
+    get:
+      tags: [Refunds & Reversals]
+      summary: Get single refund record
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Refund record
+  /reversals:
+    post:
+      tags: [Refunds & Reversals]
+      summary: Execute compensating reversal on completed transfer (FINANCE_ADMIN / PLATFORM_ADMIN + REVERSAL step-up)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/StepUpToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReversalCreateRequest'
+      responses:
+        '201':
+          description: Reversal journal posted
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /disputes:
+    post:
+      tags: [Disputes]
+      summary: Raise customer dispute on eligible transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeCreateRequest'
+      responses:
+        '201':
+          description: Dispute opened
+    get:
+      tags: [Disputes]
+      summary: List disputes (owner or support/ops/finance/platform staff)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated disputes
+  /disputes/{id}:
+    get:
+      tags: [Disputes]
+      summary: Get dispute details and append-only timeline events
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Dispute and events
+  /disputes/{id}/events:
+    post:
+      tags: [Disputes]
+      summary: Append immutable dispute event/comment or staff status transition
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '201':
+          description: Dispute event appended
+  /statements:
+    post:
+      tags: [Statements]
+      summary: Generate deterministic statement snapshot bounded by generated_at
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatementCreateRequest'
+      responses:
+        '201':
+          description: Statement generated
+    get:
+      tags: [Statements]
+      summary: List generated statements
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: walletId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paginated statements
+  /statements/{id}/export:
+    get:
+      tags: [Statements]
+      summary: Export statement as RFC 4180 CSV with formula-injection neutralization
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: CSV file download
+          content:
+            text/csv:
+              schema:
+                type: string
+  /reconciliation/runs:
+    post:
+      tags: [Reconciliation]
+      summary: Execute reconciliation batch run against synthetic provider settlement events
+      responses:
+        '201':
+          description: Reconciliation run finished with matched/exception breakdown
+    get:
+      tags: [Reconciliation]
+      summary: List reconciliation runs (staff)
+      responses:
+        '200':
+          description: Paginated reconciliation runs
+  /reconciliation/runs/{id}:
+    get:
+      tags: [Reconciliation]
+      summary: Get reconciliation run details and exceptions
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Run summary and linked exceptions
+  /reconciliation/exceptions:
+    get:
+      tags: [Reconciliation]
+      summary: List reconciliation exceptions
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, INVESTIGATING, RESOLVED, IGNORED]
+      responses:
+        '200':
+          description: Paginated exceptions
+  /reconciliation/exceptions/{id}/resolve:
+    patch:
+      tags: [Reconciliation]
+      summary: Resolve or ignore a reconciliation exception with operator note
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Exception updated
+  /risk/alerts:
+    get:
+      tags: [Risk Analytics]
+      summary: List risk alerts (OPERATIONS_ANALYST, FINANCE_ADMIN, PLATFORM_ADMIN)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      responses:
+        '200':
+          description: Paginated risk alerts
+  /risk/alerts/{id}:
+    patch:
+      tags: [Risk Analytics]
+      summary: Update alert status and review note
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Alert updated
+  /risk/assessments/{id}:
+    get:
+      tags: [Risk Analytics]
+      summary: Get persisted risk assessment record by ID
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Risk assessment record
+  /risk/assess:
+    post:
+      tags: [Risk Analytics]
+      summary: Evaluate minimized transaction risk metrics via FastAPI service (decision support only)
+      responses:
+        '201':
+          description: Risk score, band, and matched rules persisted
+        '502':
+          description: Risk service returned upstream error
+        '503':
+          description: Risk service unavailable (FAIL_CLOSED admin path)
+  /operations/dashboard:
+    get:
+      tags: [Operations & Admin]
+      summary: Aggregated operational metrics, open disputes/exceptions, and risk alert summary
+      responses:
+        '200':
+          description: Operations dashboard stats
+  /ledger/invariant-check:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Verify global double-entry sum and negative customer balance checks (Staff only)
+      responses:
+        '200':
+          description: Global invariant verification report
+  /ledger/journals/{id}:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Inspect balanced journal transaction and entries by ID
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Journal header and immutable entries
+  /ledger/reconcile/{walletId}:
+    get:
+      tags: [Wallets & Ledger]
+      summary: Verify wallet projection matches live ledger entry aggregate
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Per-wallet parity report
+  /admin/audit-events:
+    get:
+      tags: [Operations & Admin]
+      summary: Search append-only security/financial audit events
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Audit events list
+  /admin/users:
+    get:
+      tags: [Operations & Admin]
+      summary: List synthetic user accounts and assigned RBAC roles (PLATFORM_ADMIN / OPERATIONS_ANALYST / FINANCE_ADMIN)
+      responses:
+        '200':
+          description: User list
+  /admin/users/{id}/roles:
+    patch:
+      tags: [Operations & Admin]
+      summary: Update user roles (PLATFORM_ADMIN only + ADMIN_ROLE_CHANGE step-up)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '200':
+          description: User roles updated
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/users/{id}/status:
+    patch:
+      tags: [Operations & Admin]
+      summary: Update user status ACTIVE/SUSPENDED/DEACTIVATED (PLATFORM_ADMIN only + ADMIN_STATUS_CHANGE step-up)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+        - $ref: '#/components/parameters/StepUpToken'
+      responses:
+        '200':
+          description: User status updated
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/config:
+    get:
+      tags: [Operations & Admin]
+      summary: Safe sanitized non-secret configuration summary
+      responses:
+        '200':
+          description: Configuration summary
+  /admin/outbox/failed:
+    get:
+      tags: [Operations & Admin]
+      summary: List failed outbox events in dead-letter state
+      responses:
+        '200':
+          description: Failed outbox list
+  /admin/outbox/{id}/replay:
+    post:
+      tags: [Operations & Admin]
+      summary: Replay failed outbox event back to queue (FINANCE_ADMIN / PLATFORM_ADMIN)
+      parameters:
+        - $ref: '#/components/parameters/UuidIdPath'
+      responses:
+        '200':
+          description: Outbox event re-queued
