@@ -8,6 +8,7 @@ FROM node:20-alpine AS dev
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /build
+ENV CI=true
 
 # Copy workspace root files first (dependency resolution)
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
