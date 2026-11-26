@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────────────────
 
 # ── Stage 1: Dev / Dependencies ──
-FROM node:20-alpine AS dev
+FROM node:22-alpine AS dev
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
@@ -35,9 +35,9 @@ RUN pnpm --filter @fincore/contracts run build && \
     pnpm --filter @fincore/web run build
 
 # ── Stage 3: Runner ──
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
-RUN apk add --no-cache curl tini
+RUN apk update && apk upgrade --no-cache && apk add --no-cache curl tini
 
 # Create non-root user
 RUN addgroup -S fincore && adduser -S fincore -G fincore

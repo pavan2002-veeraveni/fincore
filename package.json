@@ -19,5 +19,11 @@
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.33",
+      "vite": "^8.0.0"
+    }
   }
 }
